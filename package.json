@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "dotenv -e .env -- turbo dev",
-    "build": "dotenv -e .env -- turbo build"
+    "build": "dotenv -e .env -- turbo build",
+    "db:push": "dotenv -e .env -- pnpm --filter @mono/database db:push",
+    "db:studio": "dotenv -e .env -- pnpm --filter @mono/database db:studio"
   },
   "keywords": [],
   "author": "",

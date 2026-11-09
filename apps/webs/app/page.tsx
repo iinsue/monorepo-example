@@ -1,69 +1,99 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { db } from "@/lib/db";
+import { posts, desc } from "@mono/database";
+import { createPostAction } from "./actions";
 
-export default function Home() {
+// 1. DB 조회를 담당하는 별도 서버 컴포넌트 분리
+async function PostListSection() {
+  const postList = await db.select().from(posts).orderBy(desc(posts.createdAt));
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <section>
+      <h3>게시글 목록 (총 {postList.length}개)</h3>
+      {postList.length === 0 ? (
+        <p style={{ color: "#888" }}>게시글이 없습니다.</p>
+      ) : (
+        <ul style={{ listStyle: "none", padding: 0 }}>
+          {postList.map((post) => (
+            <li
+              key={post.id}
+              style={{
+                borderBottom: "1px solid #eee",
+                paddingBottom: 12,
+                marginBottom: 12,
+              }}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+              <h4 style={{ margin: "0 0 4px 0" }}>{post.title}</h4>
+              <p style={{ margin: "0 0 8px 0", color: "#444" }}>
+                {post.content}
+              </p>
+              <small style={{ color: "#888" }}>
+                작성자: {post.author} |{" "}
+                {new Date(post.createdAt).toLocaleString()}
+              </small>
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+export default async function HomePage() {
+  return (
+    <main
+      style={{ maxWidth: 640, margin: "40px auto", fontFamily: "sans-serif" }}
+    >
+      <h1>모노레포 Drizzle DB 공유 테스트</h1>
+
+      {/* 1. 글 작성 Form (Server Action) */}
+      <section
+        style={{
+          border: "1px solid #ddd",
+          padding: 16,
+          borderRadius: 8,
+          marginBottom: 24,
+        }}
+      >
+        <h3>Next.js에서 글 작성하기</h3>
+        <form
+          action={createPostAction}
+          style={{ display: "flex", flexDirection: "column", gap: 8 }}
+        >
+          <input
+            name="title"
+            placeholder="제목"
+            required
+            style={{ padding: 8, border: "1px solid #ccc", borderRadius: 4 }}
+          />
+          <textarea
+            name="content"
+            placeholder="내용"
+            required
+            rows={3}
+            style={{ padding: 8, border: "1px solid #ccc", borderRadius: 4 }}
+          />
+          <button
+            type="submit"
+            style={{
+              padding: 8,
+              background: "#0070f3",
+              color: "#fff",
+              border: "none",
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            작성하기
+          </button>
+        </form>
+      </section>
+
+      {/* 2. 글 목록 (Server Component) */}
+      {/* DB 조회 영역을 Suspense로 감싸 사전 렌더링 블로킹 해제 */}
+      <Suspense fallback={<p>게시글 목록을 불러오는 중...</p>}>
+        <PostListSection />
+      </Suspense>
+    </main>
   );
 }
