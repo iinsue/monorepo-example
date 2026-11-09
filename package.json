@@ -4,9 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "turbo run dev",
-    "build": "turbo run build",
-    "lint": "turbo run lint"
+    "dev": "dotenv -e .env -- turbo dev",
+    "build": "dotenv -e .env -- turbo build"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +20,7 @@
   "packageManager": "pnpm@12.18.0",
   "type": "module",
   "devDependencies": {
+    "dotenv-cli": "^11.1.0",
     "turbo": "^2.11.10"
   }
 }
